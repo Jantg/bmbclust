@@ -1,3 +1,3 @@
 # bmbclust
 
-Once the first version is released on CRAN (around mid march hopefully), this repository will be open
+S4-based Implementations of Bayesian Mixture of Finite Mixtures models. Development of this package is shelved but for future reference, we put all the code implemented here.
