@@ -1,0 +1,56 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(bmbclust)
+```
+
+
+```{r}
+# drop Obj
+Component_prototype <- defineComponentObj(type = "real_valued")
+Weight_prototype <- defineWeightObj(type = "unknown_K")
+```
+
+```{r}
+bmbclustobject <- bmbclust(iris[,-5],Weight_prototype,Component_prototype)
+bmbclust_posterior <- simulate(bmbclustobject,n_iter = 1e4,n_burnin = 1e4,verbose = FALSE)
+```
+
+```{r}
+plot(bmbclust_posterior)
+```
+
+
+
+```{r}
+bmbclust_posterior_identified <- identify(bmbclust_posterior)
+summary(bmbclust_posterior_identified)
+```
+
+```{r}
+# run it even longer
+bmbclust_posterior2 <- simulate(bmbclust_posterior,n_iter = 10000,n_burnin = 0,verbose = FALSE)
+```
+
+```{r}
+# We could intead use label.switching() function
+tmp <- tolabel.switching(bmbclust_posterior2)
+```
+
+```{r}
+# Similarity matrix between all combination of methods
+tmp$similarity
+```
+
+```{r}
+bmbclust_posterior2_identified <- identify(bmbclust_posterior2,perms = tmp$perms,nonperm = tmp$nonperm)
+summary(bmbclust_posterior2_identified)
+```
+
+```{r}
+summary(bmbclust_posterior_identified)
+```
+

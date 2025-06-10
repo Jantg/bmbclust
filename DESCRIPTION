@@ -1,0 +1,19 @@
+Package: bmbclust
+Type: Package
+Title: Tools for Bayesian Model-Based Clustering
+Version: 1.0
+Date: 2020-04-23
+Authors@R: c(person("Sylvia", "Frühwirth-Schnatter", role = "aut"),
+	     person("Jan", "Greve", role = c("aut", "cre"),
+	            email = "jgreve@wu.ac.at"),
+             person("Bettina", "Grün", role = "aut"),
+	     person("Gertraud", "Malsiner-Walli", role = "aut"))
+Description: Implements a flexible framework for Bayesian model-based clustering. 
+License: GPL-2
+Imports: Rcpp (>= 1.0.2), GIGrvg, bayesm, evd, parallel, klaR, abind, matrixStats, mvtnorm,label.switching
+LinkingTo: Rcpp, RcppArmadillo
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Encoding: UTF-8

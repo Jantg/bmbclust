@@ -1,0 +1,40 @@
+fitdistr package:MASS R Documentation
+
+Maximum-likelihood Fitting of Univariate Distributions
+
+Description:
+
+Maximum-likelihood fitting of univariate distributions, allowing
+parameters to be held fixed if desired.
+
+Usage:
+
+fitdistr(x, densfun, start, ...)
+
+Arguments:
+
+x: A numeric vector of length at least one containing only
+finite values.
+
+densfun: Either a character string or a function returning a density
+evaluated at its first argument.
+
+Distributions ‘"beta"’, ‘"cauchy"’, ‘"chi-squared"’,
+‘"exponential"’, ‘"gamma"’, ‘"geometric"’, ‘"log-normal"’,
+‘"lognormal"’, ‘"logistic"’, ‘"negative binomial"’,
+‘"normal"’, ‘"Poisson"’, ‘"t"’ and ‘"weibull"’ are
+recognised, case being ignored.
+
+start: A named list giving the parameters to be optimized with
+initial values. This can be omitted for some of the named
+distributions and must be for others (see Details).
+
+
+Priority
+0. New R package for spying paper: compute K_plus/Entropy, vigniette to show reproduce results (inside .Rbuildignore  file).
+1. Update_rule part -> make it easier to move to between hier settings
+2. Identification (categegorial mixtures) Copositional data -> transformations to bring it to real-space 
+3. Plotting of postprocesed results
+4. tidying:making more functions to do telescope sampler part shorter
+5. Look at how other people implemented summary() part
+

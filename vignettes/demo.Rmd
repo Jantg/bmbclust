@@ -1,0 +1,175 @@
+---
+title: "demo"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=12,
+  fig.height=8)
+```
+
+```{r setup}
+library("bmbclust")
+```
+
+
+# Telescope Sampling demo
+
+Let's first run the sampler and obtain all relevant posterior quantitites (number of data clusters, mixture components etc.).
+
+```{r echo=TRUE,results = "hide"}
+y = as.matrix(iris[,1:(ncol(iris)-1)],ncol = ncol(iris)-1)
+# In total 110000 runs will take approx 6 min (depends on the prior for K) for iris data
+  res = bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 2.0,niter = 10000,nburnin = 10000,pr_k = list("bnb",9,4,3),
+                            pr_alpha = list(6,5),K_max = 150,FALSE,0.4,0.4)
+```
+
+Before moving on to identification, let's take a look at some quantitites that matter.
+
+## Check mixing performance
+
+```{r}
+par(mfrow=c(3,1))
+plot(res$alphas,ylab = "alpha")
+plot(res$Kps,ylab = "K_plus")
+plot(res$Ks,ylab = "K")
+```
+
+## Sanity check
+
+```{r}
+boxplot(alphas~as.factor(round(Kps/Ks,digits=2)), data = res[c("alphas", "Kps", "Ks")],
+  ylab = "K_plus/K",xlab = "alpha", horizontal = TRUE,par(las = 1,cex.axis = 0.5))
+abline(v=1,col="red")
+```
+
+## Posterior quantities
+
+```{r}
+par(mfrow=c(1,2))
+h1 = hist(res$Kps,plot = FALSE)
+h1$counts = h1$counts/sum(h1$counts)
+plot(h1,xlab = "K_plus",ylab = "prob",main = "Histogram of posterior K_plus")
+h2 = hist(res$Kps/res$Ks,plot = FALSE)
+h2$counts = h2$counts/sum(h2$counts)
+plot(h2,xlab = "K_plus/K",ylab = "prob",main ="Histogram of posterior K_plus/K")
+```
+
+```{r}
+quantile(res$alphas)
+```
+
+## Posterior consistency check
+```{r echo=TRUE,results = "hide", cache=TRUE,eval = FALSE}
+# Will take some time to execute
+all_comb = expand.grid(list("bnb","pois","geom"),list(1.0,3.0,9.0))
+K_modes = numeric(nrow(all_comb))
+for(i in 1:nrow(all_comb)){
+  if(all_comb[i,1]=="geom"){
+    K_modes[i] = names(which.max(table(bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 100000,nburnin = 10000,pr_k = list("geom",1/(as.numeric(all_comb[i,2])+1)),pr_alpha = list(6,5),K_max = 100,printprogress = FALSE,0.4,0.4)$Kps)))
+  }
+  if(all_comb[i,1]=="pois"){
+    K_modes[i] = names(which.max(table(bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 100000,nburnin = 10000,pr_k = list("pois",as.numeric(all_comb[i,2])),pr_alpha = list(6,5),K_max = 100,printprogress = FALSE,0.4,0.4)$Kps)))
+  }
+  if(all_comb[i,1]=="bnb"){
+    K_modes[i] = names(which.max(table(bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 100000,nburnin = 10000,pr_k = list("bnb",as.numeric(all_comb[i,2]),4.0,3.0),pr_alpha = list(6,5),K_max = 100,printprogress = FALSE,0.4,0.4)$Kps)))
+  }
+}
+```
+
+## identification
+
+```{r eval= FALSE}
+K_mode = names(which.max(table(res$Kps)))
+K_mode = as.numeric(K_mode)
+res_df = Reduce(function(l,r) rbind(l,r) ,lapply(which(res$Kps == K_mode),function(x) res$comp_means[[x]][,,1][1:K_mode,]))
+clst = kmeans(res_df,K_mode)
+perm_or_not = sapply(1:sum(res$Kps==K_mode),function(x) all(sort(clst$cluster[((x-1)*K_mode+1):(x*K_mode)])== 1:K_mode))
+idx = which(perm_or_not)
+res_ordered = simplify2array(lapply(idx,function(i) res_df[((i-1)*K_mode+1):(K_mode*i),][clst$cluster[((i-1)*K_mode+1):(K_mode*i)],]))
+
+lapply(1:K_mode,function(i) apply(res_ordered[i,,],1,function(x) quantile(x,probs = c(.025,.5,.975))))
+```
+
+#With other data
+
+
+## Galaxies data set
+
+```{r}
+data("galaxies", package = "bmbclust")
+y = galaxies / 1000
+y = as.matrix(y,ncol = 1)
+res2 = bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 50000,nburnin = 10000,
+                           pr_k = list("bnb",3,4,3),pr_alpha = list(1.0,2.0),K_max = 100,printprogress = FALSE,0.4,0.4)
+```
+
+
+```{r}
+par(mfrow=c(3,1))
+plot(res2$alphas,ylab = "alpha")
+plot(res2$Kps,ylab = "K_plus")
+plot(res2$Ks,ylab = "K")
+```
+
+```{r}
+boxplot(res2$alphas~as.factor(round(res2$Kps/res2$Ks,digits=2)),ylab = "K_plus/K",xlab = "alpha",horizontal = TRUE,par(las = 1,cex.axis = 0.5))
+abline(v=1,col="red")
+```
+
+```{r}
+par(mfrow=c(1,2))
+h1 = hist(res2$Kps,plot = FALSE)
+h1$counts = h1$counts/sum(h1$counts)
+plot(h1,xlab = "K_plus",ylab = "prob",main = "Histogram of posterior K_plus")
+h2 = hist(res2$Kps/res2$Ks,plot = FALSE)
+h2$counts = h2$counts/sum(h2$counts)
+plot(h2,xlab = "K_plus/K",ylab = "prob",main ="Histogram of posterior K_plus/K")
+```
+
+# Enzym data
+```{r cache=TRUE}
+data("enzyme", package = "bmbclust")
+y = as.matrix(enzyme,ncol = 1)
+res3 = bmbclust(data = y,K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 100000,nburnin = 10000,
+                           pr_k = list("bnb",3,4,3),pr_alpha = list(1.0,2.0),K_max = 100,printprogress = FALSE,0.4,0.4)
+```
+
+```{r}
+par(mfrow=c(3,1))
+plot(res3$alphas,ylab = "alpha")
+plot(res3$Kps,ylab = "K_plus")
+plot(res3$Ks,ylab = "K")
+```
+
+
+```{r}
+boxplot(res3$alphas~as.factor(round(res3$Kps/res3$Ks,digits=2)),ylab = "K_plus/K",xlab = "alpha",horizontal = TRUE,par(las = 1,cex.axis = 0.5))
+abline(v=1,col="red")
+```
+
+```{r}
+par(mfrow=c(1,2))
+h1 = hist(res3$Kps,plot = FALSE)
+h1$counts = h1$counts/sum(h1$counts)
+plot(h1,xlab = "K_plus",ylab = "prob",main = "Histogram of posterior K_plus")
+h2 = hist(res3$Kps/res3$Ks,plot = FALSE)
+h2$counts = h2$counts/sum(h2$counts)
+plot(h2,xlab = "K_plus/K",ylab = "prob",main ="Histogram of posterior K_plus/K")
+```
+
+
+```{r eval = FALSE}
+data("yeast", package = "bmbclust")
+y = as.matrix(yeast[,2:(ncol(yeast)-1)],ncol = length(2:(ncol(yeast)-1)))
+res = bmbclust(data = y[,-c(5,6)],K_init = 100, alpha_init = 1,s_alpha = 1.0,niter = 100000,nburnin = 10000,
+                          pr_k = list("bnb",9,4,3),pr_alpha = list(6,5),K_max = 100,FALSE,0.4,0.4)
+```
+

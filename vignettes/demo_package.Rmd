@@ -1,0 +1,66 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(bmbclust)
+```
+
+## Multivariate Gaussian mixture
+
+```{r}
+## Multivariate Gaussian mixture with Iris data
+data <- iris[,-5]
+
+# define the model
+model_mvn <- bmbclust(data)
+
+# run the sampler 
+res_mvn <- bmbclust.sample(model_mvn,n.iter = 1e4,n.burnin = 1e4,n.thin = 5,verbose = TRUE)
+```
+
+
+```{r}
+# it is possible to pass the output of the sampler again to the sample function to resume the samping
+res_mvn_cont <- bmbclust.sample(res_mvn,n.iter = 1e4,n.burnin = 0,n.thin = 5)
+```
+
+```{r}
+# Another model with a different prior on alpha and K
+model_mvn2 <- bmbclust(data,prior.alpha = dgamma,prior.alpha.parameters = list(shape = 1.0, rate = 2.0),
+                       prior.k = dgeom,prior.k.parameters = list(prob = 0.1))
+res_mvn2 <- bmbclust.sample(model_mvn2,n.iter = 1e4,n.burnin = 1e4,n.thin = 5)
+```
+
+```{r}
+identified <- identification(res_mvn_cont)
+identified2 <- identification(res_mvn2)
+summary(identified)
+summary(identified2)
+```
+
+```{r}
+params <- tolabel.switching(res_mvn_cont)
+lbl_switch <- label.switching::label.switching(c("ECR-ITERATIVE-1","ECR-ITERATIVE-2","STEPHENS"),z = params$z,K = 3,
+                                 mcmc = params$mcmc,p = params$p)
+```
+
+
+```{r}
+data_count <- matrix(c(rpois(100,5),rpois(80,3),rpois(30,1)))
+model_count <- bmbclust(data_count)
+res_count <- bmbclust.sample(model_count,n.iter = 1e4,n.burnin = 1e4,n.thin = 5)
+identified_count <- identification(res_count)
+summary(identified_count)
+```
+
+
+```{r}
+data_lca <- read.csv("/home/jan/Downloads/lca1.csv",header = FALSE,row.names = 1)
+library(dplyr)
+data_lca <- data_lca %>% mutate_all(function(x) factor(x))
+model_lca <- bmbclust(data_lca,prior.alpha = dgamma,prior.alpha.parameters = list(shape = 1.0,rate = 2.0))
+res_lca <- bmbclust.sample(model_lca,n.iter = 1e4,n.burnin = 1e4,n.thin = 5)
+```
+

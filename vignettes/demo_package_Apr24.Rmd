@@ -1,0 +1,148 @@
+---
+title: "Progress bmbclust Apr 24"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+library(bmbclust)
+```
+
+# Overview of the package
+
+The most basic procedure involves:
+
+1. Model specification with the **bmbclust()** function. 
+
+So far it can deal with real-valued, count (1d only) and categorical data with Gaussian, poisson and categorical mixtures respectively. Other parameters we can specify are priors for $K,\alpha$, step-size of the metroplis random walk for sampling $\alpha$, initial value for $K$ and the truncation threshold for $K$. 
+
+Functionalities we would like to add in the future are possibility to specify mixtures of mixtures, an option to specify a static MFM (this shouldn't be hard), options to specify other prior hyperparameters etc.
+
+2. Posterior simulation with the **simulate()** function.
+
+The **simulate()** function essentially runs the sampler of our choice (only the Telescope sampler is implemented so far, but the structure allows us to implement other samplers too) with sampler specific arguments such as the number of iterations/burnins and thinning rates. Other options are the number of chains run in parallell (not implemented yet), whether diagnostics plots should be generated during the sampling or not (the *verbose* argument), and whether a prior of $K+$ should be overlayed to the barplot of $K+$ when *verbose* is set to TRUE (which is implemented but makes the sampler very slow).
+
+3. Identification with the **identify()** function (or the **tolabel.switching()** function followed by the **identify()**).
+
+The **identify()** function runs a K-means clustering to a stacked data.frame of means, determinant of the covariance matix (for the gaussian mixture) and log weights. In default setting, the mode of the $K+$ will be chosen as a MAP estimate of the number of data clusters.
+
+Optionally, the user can supply the number of data clusters and also the permutations of labels. Therefore, by combining with the output from the **tolabel.switch()** method which returns the consensus permutation across various methods (which the user can specify) implemented in label.switching package, we can do identification with an external package.
+
+4. Finally, we can obtain a summary of a fully identified model with the **summary()** function.
+
+
+
+## Demo (iris data)
+
+```{r cache=TRUE}
+model_real <- bmbclust(iris[,-5], data.type = "real.valued")
+# Maybe we should at least have a progress bar when verbose is set to FALSE
+res_real <- simulate(model_real,n.iter = 1e4,n.burnin = 1e4,n.thin = 5,verbose = FALSE)
+```
+
+Point process representation of unindentified parameters.
+
+```{r}
+plot(res_real)
+```
+
+Indentification by the K-means algorithm.
+
+```{r}
+res_real_identified <- identify(res_real)
+```
+
+```{r}
+summary(res_real_identified)
+```
+
+We could also use label.switching package to do identification.
+
+```{r}
+lblsw_args <-tolabel.switching(res_real)
+```
+
+```{r}
+res_real_identified2 <- identify(res_real,perms = lblsw_args$perms,
+                                 nonperm = lblsw_args$nonperm)
+```
+
+```{r}
+summary(res_real_identified)
+summary(res_real_identified2)
+```
+
+```{r}
+#nonperm rate
+print(c(res_real_identified@post.identification$nonperm_rate,
+        res_real_identified2@post.identification$nonperm_rate))
+```
+
+
+# Demo categorical data
+
+```{r cache = TRUE}
+library(dplyr)
+data_lca <- read.csv("../data/lca1.csv",header = FALSE,row.names = 1)
+data_lca <- data_lca %>% mutate_if(is.numeric,as.factor)
+model_lca <- bmbclust(data_lca,data.type = "categorical")
+res_lca <- simulate(model_lca,n.iter = 1e4,n.burnin = 1e4,n.thin =5,verbose = FALSE)
+```
+
+```{r}
+plot(res_lca)
+```
+
+```{r}
+res_lca_identified <- identify(res_lca)
+lblsw_args_lca <- tolabel.switching(res_lca)
+res_lca_identified2 <- identify(res_lca,perms = lblsw_args_lca$perms,nonperm = lblsw_args_lca$nonperm)
+```
+
+```{r}
+summary(res_lca_identified)
+summary(res_lca_identified2)
+```
+
+```{r}
+print(c(res_lca_identified@post.identification$nonperm_rate,
+        res_lca_identified2@post.identification$nonperm_rate))
+```
+
+
+# Galaxy data
+
+```{r}
+data("galaxies")
+data_real1d <- matrix(galaxies)
+```
+
+```{r}
+model_real1d <- bmbclust(data_real1d,data.type = "real.valued")
+res_real1d <- simulate(model_real1d,n.iter = 1e4,n.burnin= 1e4,n.thin = 5,verbose = FALSE)
+```
+
+
+```{r}
+plot(res_real1d)
+```
+
+
+```{r}
+res_real1d_identified <- identify(res_real1d)
+lblsw_args_real1d <- tolabel.switching(res_real1d)
+res_real1d_identified2 <- identify(res_real1d,perms = lblsw_args_real1d$perms,nonperm = lblsw_args_real1d$nonperm)
+```
+
+```{r}
+summary(res_real1d_identified)
+summary(res_real1d_identified2)
+```
+
+```{r}
+print(c(res_real1d_identified@post.identification$nonperm_rate,
+        res_real1d_identified2@post.identification$nonperm_rate))
+```
+

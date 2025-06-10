@@ -1,0 +1,96 @@
+---
+title: "demo_new"
+output: html_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=12,
+  fig.height=8)
+```
+
+```{r setup}
+library("bmbclust")
+```
+
+```{r}
+  
+# Define the specification of the telescope sampler
+# defaults are prior on alpha being F(6,1), that of K being bnb(6,4,3) etc.
+
+# default with gaussian component density (the only case I have implemented so far)
+mod1 <- BMBCMx(data = iris[,-5],component.density = "gaussian",prior.k = list("bnb",9,4,3))
+# another model with alpha~Gamma(0.1,0.1) instead
+#mod2 <- BMBCMx(data = iris[,-5],"gaussian",prior.alpha = list("Gamma",0.1,0.1),prior.k = list("bnb",9,4,3))
+# last model with K~Geom(0.3)
+mod3 <- BMBCMx(data = iris[,-5],"gaussian",prior.k = list("geom",0.3))
+models <- list(mod1,mod3)
+#models <- list(mod1)
+# With optional arguments control and init, we can apply specific settings across models
+# If these settings should vary by models, it can be set inside BMBCMx() function instead
+# The argument parallel will make the mcmc across models run in parallel to save time (in this case it will use 3 cores, one for each model)
+results <- bmbclust(iris[,-5],model = models,control = list(n.iter = 1e4,n.burnin = 1e5),init = list(init.alpha = 1.0,max.k = 300),parallel = TRUE)
+identified <- identification(results)
+summary(identified)
+```
+
+
+```{r}
+# sensitivity_analysis() function receives the object from bmbclust() function and plots the posterior of K across models (specifications in alpha,k like that above)
+sensitivity_analysis(results)
+```
+
+```{r}
+data("yeast")
+#data = yeast[,-c(1,6,7,10)]
+data = yeast[,c(2,3,4)]
+m1 <- BMBCMx(data = data,component.density = "gaussian",prior.k = list("bnb",9,4,3))
+m2 <- BMBCMx(data = data,"gaussian",prior.k = list("geom",0.3))
+#mods <- list(m1,m2)
+mods <- list(m1,m2)
+
+results <- bmbclust(data,model = mods,control = list(n.iter = 1e4,n.burnin = 1e5),init = list(init.alpha = 1.0,max.k = 150),parallel = TRUE)
+
+```
+
+
+```{r}
+# sensitivity_analysis() function receives the object from bmbclust() function and plots the posterior of K across models (specifications in alpha,k like that above)
+sensitivity_analysis(results)
+```
+
+
+```{r}
+data("acidity")
+data <- acidity
+
+m1<- BMBCMx(data = data,component.density = "gaussian")
+m2<- BMBCMx(data = data,component.density = "gaussian",prior.alpha = list("Gamma",0.1,0.1))
+mods <- list(m1,m2)
+
+results <- bmbclust(data,model = mods,control = list(n.iter = 1e4,n.burnin = 1e5),init = list(init.alpha = 1.0,max.k = 150),parallel = TRUE)
+```
+
+```{r}
+identified <- identification(results)
+summary(identified)
+```
+
+```{r}
+# we can for example use the last posterior parameters (alpha,mean,cov,K) as the initialization of the sampler to continue MCMC to run longer
+
+m1<- BMBCMx(data = data, component.density = "gaussian",init.compmean = tail(results@posteriors[[1]]$comp_means,n=1)[[1]],
+            init.compcov = tail(results@posteriors[[1]]$comp_covs,n=1)[[1]],init.alpha = tail(results@posteriors[[1]]$alphas,n=1),
+            init.k = tail(results@posteriors[[1]]$Ks,n=1))
+
+m2<- BMBCMx(data,"gaussian,",prior.alpha = list("Gamma",0.1,0.1),component.density = "gaussian",init.compmean = tail(results@posteriors[[2]]$comp_means,n=1)[[1]],
+            init.compcov = tail(results@posteriors[[2]]$comp_covs,n=1)[[1]],init.alpha = tail(results@posteriors[[2]]$alphas,n=1),
+            init.k = tail(results@posteriors[[2]]$Ks,n=1))
+modes <- list(m1,m2)
+results_continued <- bmbclust(data,model = mods,control = list(n.iter = 1e5,n.burnin = 1),init = list(max.k = 150),parallel = TRUE)
+```
+
+
+

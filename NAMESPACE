@@ -1,0 +1,4 @@
+useDynLib(bmbclust, .registration = TRUE)
+importFrom(Rcpp, evalCpp)
+importFrom(GIGrvg, rgig)
+exportPattern("^[[:alpha:]]+")

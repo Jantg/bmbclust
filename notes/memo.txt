@@ -1,0 +1,48 @@
+Topics we discussed (Sep 25)
+
+1. Good name for the package!!
+
+"bmbclst" as for bayesian model based clustering?
+
+Usually, package name will also be the main function name (like bmbclst(**args)) so need to take that into account.
+
+Either a name inspired by existing packages or methodology (the name "bmbclst" seems close to mclust and it also 
+rhymes with BNP which is a area we would like to bridge with) and/or something memorable (like PReMiuM etc.) so that
+people from various deciplines can reach/remember it.
+
+2. Good default specification
+
+Not only in terms of computational aspect but also in the overall fuctionality (understandable, extendable etc.).
+
+Features we might want to have are:
+   * Hyperparameters for priors in accordance with the size of the data (current specification seems to
+     be primarly for N approx 100~300 and p small scenario so may need to adjust those for other settings).
+
+   * Compatibility to mixed type data (numeric, count, categorical etc.) by assuming cid across types.
+     Some implementation in flexmix for ref. This also requires appropriate prior specifications to various 
+     types of data. The implementation of this would probably involve defining an object which consits of 
+     type name, density function, collection of data of this type and parameters for the corresponding pdf.
+
+   * Not so many optional arguments that depend on the specification. Rather, divide the procedure in layers
+     and pass objects. Hopefully these objects and classes that depend on them are general enough to take 
+     into account future expansion such as a new component density fuction (mixture of mixtures, mixture of 
+     experts etc.).
+    
+   * (related to the last point) Objects such as the parition objects may be compatible or at least be easily
+     processed by outside package such as the labelswitch pkg.
+
+   * Some way to obtain the consensus partition (across K+ or component density of choie or clustering scheme
+     for identification?) at the end may be useful. For example, the user may only be interested in a specific
+     subgroup that's always identified (= stable partition).
+
+   * A test directory which holds data with various characteristics used for unit testing/benchmarking. Perhaps
+     data from MBCbook may be useful.
+
+3. Places to look for reference (please add more!)
+name, purpose
+
+mclust, benchmark to beat in terms of usability, functionality 
+flexmix, extendable object/class structure, mixed type data compatibility etc.
+label.switching, for compatilibity to our package
+PReMiuM, compatibility to various component densitites
+baRpkgs, for package structure

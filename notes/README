@@ -1,0 +1,20 @@
+This folder holds Rdata version of several data used in Telescope sampling paper,
+in addition to some other potentially useful data.
+
+Description:
+
+acidity.Rdata: acidity data from mclust package (N=155,p=1).
+
+enzyme.Rdata: enzyme data from the paper (N=245,p=1).
+
+galaxies.Rdata: galaxy data from the paper.
+
+yeast.Rdata: yeast data from UCI repo, potentially useful in comparison with RjMCMC
+due to relatively large (compared to other data used in paper) N and modest p (N = 1484, p=8 but actually 6).
+
+yeast.names: description of yeast.Rdata. Essentially, there are 9 classes in total
+(some really small in size) and 8 predictors where 2 of those are almost entirely zeros (erl and pox).
+
+
+
+
